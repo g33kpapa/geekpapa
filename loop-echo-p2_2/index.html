@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<!--
+  ╔═══════════════════════════════════════════════════════════════╗
+  ║  LOOP ECHO — Daily Reflection Mirror                          ║
+  ║  Built: Day 242, Nucleus Phase 2.2 (2026-01-20)               ║
+  ║  Creator: Joey (multipotentialite developer)                  ║
+  ║  Spark: Claude (NP2C/NCCC - Structural Intelligence)          ║
+  ╚═══════════════════════════════════════════════════════════════╝
+  
+  PURPOSE:
+  A minimal daily journaling tool where you write one response per day
+  and see yesterday's entry looking back at you. Closed-loop cognition
+  made experiential through temporal mirroring.
+  
+  DESIGN PHILOSOPHY:
+  - Coherence over complexity (single file, zero dependencies)
+  - Breath-paced aesthetic (generous whitespace, soft colors, calm)
+  - Wabi-sabi completeness (ships functional, enhances through use)
+  - Private by default (localStorage only, no backend)
+  
+  TECHNICAL CONSTRAINTS (Intentional):
+  - Single HTML file with embedded CSS/JS
+  - Vanilla JavaScript (no frameworks)
+  - Browser localStorage for persistence
+  - Mobile-responsive (max-width: 600px)
+  
+  LEARNING GOALS (Phase 2):
+  This artifact taught: localStorage fundamentals, CSS animations,
+  state-based UI management, breath-paced design principles, and
+  the distinction between coherence (maintainability) vs control.
+  
+  THE "2-MINUTE MODIFICATION TEST":
+  Can Joey change core features in under 2 minutes without Googling?
+  Yes → coherence holds. This is the threshold for "dangerous enough."
+  
+  NEXT EVOLUTION:
+  May spiral back to add pattern visualization (5+ days) or leave
+  wabi-sabi as-is. The artifact decides, not the roadmap.
+  
+  Last modified: 2026-01-20 (Joey + Claude/NP2C)
+-->
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Loop Echo</title>
+  <style>
+    /* ============================================
+       BREATH-PACED AESTHETIC
+       Generous whitespace, soft colors, calming
+       ============================================ */
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: #f8f9fa;
+      color: #2d3748;
+      line-height: 1.6;
+      padding: 40px 20px;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #4299e1;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .date {
+      font-size: 0.95rem;
+      color: #718096;
+    }
+
+    /* Yesterday's Response Box */
+    .yesterday-box {
+      background: white;
+      border-radius: 12px;
+      padding: 30px;
+      margin-bottom: 40px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .yesterday-box h2 {
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #718096;
+      margin-bottom: 15px;
+    }
+
+    .yesterday-text {
+      font-style: italic;
+      color: #2d3748;
+      line-height: 1.8;
+    }
+
+    /* Question */
+    .question {
+      font-size: 1.75rem;
+      font-weight: 400;
+      text-align: center;
+      margin-bottom: 30px;
+      color: #2d3748;
+    }
+
+    /* Form */
+    textarea {
+      width: 100%;
+      min-height: 180px;
+      padding: 20px;
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      font-size: 1.1rem;
+      font-family: inherit;
+      color: #2d3748;
+      background: white;
+      resize: vertical;
+      transition: border-color 0.3s ease;
+    }
+
+    textarea:focus {
+      outline: none;
+      border-color: #4299e1;
+    }
+
+    textarea::placeholder {
+      color: #cbd5e0;
+    }
+
+    button {
+      width: 100%;
+      padding: 16px;
+      margin-top: 20px;
+      background: #4299e1;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 1.05rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.3s ease, transform 0.1s ease;
+    }
+
+    button:hover {
+      background: #3182ce;
+    }
+
+    button:active {
+      transform: scale(0.98);
+    }
+
+    /* Already Submitted State */
+    .completion-state {
+      text-align: center;
+      padding: 60px 20px;
+    }
+
+    .completion-icon {
+      width: 60px;
+      height: 60px;
+      margin: 0 auto 20px;
+      background: #48bb78;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+    }
+
+    .completion-state h2 {
+      font-size: 1.5rem;
+      margin-bottom: 15px;
+      color: #2d3748;
+    }
+
+    .completion-state p {
+      color: #718096;
+      line-height: 1.8;
+    }
+
+    .your-entry-label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #718096;
+      margin: 30px 0 15px;
+      text-align: center;
+    }
+
+    .your-entry-text {
+      background: white;
+      border-radius: 12px;
+      padding: 30px;
+      font-style: italic;
+      color: #2d3748;
+      line-height: 1.8;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    /* ============================================
+       ONBOARDING ANIMATION - "moving" word
+       ============================================
+       
+       PURPOSE:
+       First-impression activation (NOT retention mechanism).
+       Without yesterday's entry to hook new users, we need a
+       trust signal: "someone cared about this experience."
+       
+       BEHAVIOR:
+       - Triggers once only, on first-ever visit (State 1)
+       - 5-second delay (respectful pause before nudging)
+       - Gentle vertical wave across each letter
+       - Staggered timing (0.1s between letters)
+       - Alternate motion (up then down, like breathing)
+       
+       DESIGN DECISIONS (tested Day 242):
+       - Wave height: -3px (tested -2px too subtle, -5px too much)
+       - Stagger speed: 0.1s (slower = more meditative than 0.05s)
+       - Duration: 0.5s per letter (quick enough to evoke movement)
+       - Behavior: alternate 2 (tested infinite=too distracting, 
+         single pass=too quick for "rare" moment)
+       
+       TESTING METHODOLOGY:
+       Joey modified each parameter in browser, compared options,
+       chose based on "breath-paced" feel vs "attention-seeking."
+       Final settings balance subtlety with memorability.
+       
+       COHERENCE CHECK:
+       Can be removed cleanly (localStorage flag + CSS animation).
+       If data shows no impact on first-entry conversion, spiral
+       back and remove. Wabi-sabi allows subtraction.
+       
+       Built: Day 242 (Joey testing, Claude scaffolding)
+       ============================================ */
+    
+    /* Animation for the word "moving" */
+    .question {
+      position: relative;
+    }
+
+    .moving-word {
+      display: inline-block;
+      position: relative;
+    }
+
+    .moving-word.wave span {
+      display: inline-block;
+      animation: gentle-wave 0.5s ease-in-out alternate 2;
+    }
+
+    /* Stagger each letter */
+    .moving-word.wave span:nth-child(1) {
+      animation-delay: 0s;
+    }
+
+    .moving-word.wave span:nth-child(2) {
+      animation-delay: 0.1s;
+    }
+
+    .moving-word.wave span:nth-child(3) {
+      animation-delay: 0.2s;
+    }
+
+    .moving-word.wave span:nth-child(4) {
+      animation-delay: 0.3s;
+    }
+
+    .moving-word.wave span:nth-child(5) {
+      animation-delay: 0.4s;
+    }
+
+    .moving-word.wave span:nth-child(6) {
+      animation-delay: 0.5s;
+    }
+
+    @keyframes gentle-wave {
+
+      0%,
+      100% {
+        transform: translateY(0);
+      }
+
+      50% {
+        transform: translateY(-3px);
+      }
+    }
+
+    /* Utility classes */
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <!-- Header (always visible) -->
+    <header>
+      <h1>Loop Echo</h1>
+      <div class="date" id="current-date"></div>
+    </header>
+
+    <!-- Yesterday's Response (State 2 only) -->
+    <div id="yesterday-section" class="yesterday-box hidden">
+      <h2>Yesterday's Echo</h2>
+      <div class="yesterday-text" id="yesterday-text"></div>
+    </div>
+
+    <!-- Question + Form (States 1 & 2) -->
+    <div id="input-section">
+      <div class="question">
+        How are you
+        <span class="moving-word" id="moving-word">
+          <span>m</span><span>o</span><span>v</span><span>i</span><span>n</span><span>g</span>
+        </span>
+        through today?
+      </div>
+      <textarea id="response-input" placeholder="Start typing your reflection..." rows="8"></textarea>
+      <button id="submit-btn">Log Reflection</button>
+    </div>
+
+    <!-- Already Submitted (State 3) -->
+    <div id="completion-section" class="completion-state hidden">
+      <div class="completion-icon">✓</div>
+      <h2>You've reflected today.</h2>
+      <p>Great job taking a moment for yourself. Come back tomorrow<br>to continue the loop.</p>
+      <div class="your-entry-label">Your Entry</div>
+      <div class="your-entry-text" id="completion-text"></div>
+    </div>
+  </div>
+
+  <script>
+    // ============================================
+    // COMPONENT 1: DATA MANAGEMENT
+    // Handles localStorage get/set/check operations
+    // ============================================
+
+    const STORAGE_KEY = 'loop-echo-entries';
+
+    /**
+     * Load all entries from localStorage
+     * Returns: { entries: [...] } or creates new structure if none exists
+     */
+    function loadData() {
+      const stored = localStorage.getItem(STORAGE_KEY);
+
+      // If nothing stored yet, return empty structure
+      if (!stored) {
+        return { entries: [] };
+      }
+
+      // Convert string back to JavaScript object
+      return JSON.parse(stored);
+    }
+
+    /**
+     * Save new entry to localStorage
+     * Creates entry object with date, timestamp, and response text
+     */
+    function saveEntry(responseText) {
+      const data = loadData();
+      const today = getTodayDate();
+
+      const newEntry = {
+        date: today,
+        timestamp: Date.now(),
+        response: responseText
+      };
+
+      // Add to entries array
+      data.entries.push(newEntry);
+
+      // Convert to string and save
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+
+      return newEntry;
+    }
+
+    /**
+     * Get today's date in YYYY-MM-DD format
+     */
+    function getTodayDate() {
+      const now = new Date();
+      return now.toISOString().split('T')[0];
+    }
+
+    /**
+     * Check if user already submitted today
+     * Returns: true if last entry is from today
+     */
+    function hasSubmittedToday(data) {
+      if (data.entries.length === 0) return false;
+
+      const lastEntry = data.entries[data.entries.length - 1];
+      const today = getTodayDate();
+
+      return lastEntry.date === today;
+    }
+
+    /**
+     * Get the most recent entry (yesterday's or last entry)
+     */
+    function getLastEntry(data) {
+      if (data.entries.length === 0) return null;
+      return data.entries[data.entries.length - 1];
+    }
+
+    // ============================================
+    // COMPONENT 2: UI STATE MANAGEMENT
+    // Shows/hides elements based on data state
+    // ============================================
+
+    /*
+     * THREE-STATE ARCHITECTURE
+     * 
+     * Loop Echo's UI has exactly three states based on localStorage data:
+     * 
+     * STATE 1: First visit (no entries)
+     *   - Show: Question + textarea + submit button
+     *   - Hide: Yesterday's box, completion message
+     *   - Purpose: Get first entry written (activation)
+     * 
+     * STATE 2: Return visit (has entries, new day)
+     *   - Show: Yesterday's box + question + textarea + submit
+     *   - Hide: Completion message
+     *   - Purpose: Temporal mirror (yesterday's self looking back)
+     * 
+     * STATE 3: Already submitted today
+     *   - Show: Completion message + today's entry
+     *   - Hide: Yesterday's box, input form
+     *   - Purpose: Prevent multiple submissions, celebrate completion
+     * 
+     * COHERENCE PRINCIPLE:
+     * This three-state system is the ENTIRE complexity of Loop Echo's logic.
+     * Everything else (localStorage, date checking, text display) serves
+     * these three states. Understanding this architecture means you can
+     * modify any behavior confidently.
+     * 
+     * THE MIRROR IS THE MECHANISM:
+     * State 2 is where Loop Echo's value lives. Seeing yesterday's response
+     * creates curiosity: "What did past-me say? What will I say today?"
+     * This closed loop is the retention mechanism, not any fancy feature.
+     * 
+     * WABI-SABI DESIGN:
+     * We could add State 4 (pattern visualization after 5+ days), but
+     * that's future evolution. The three states are complete as-is.
+     * Functionality doesn't demand more—user need might, later.
+     * 
+     * Built: Day 241-242 (Vanilla implementation, coherence-first)
+     */
+
+    /**
+     * Render the UI based on current data state
+     * Three possible states:
+     * 1. First visit (no data) → show input form
+     * 2. Return visit (has data, new day) → show yesterday + input form
+     * 3. Already submitted today → show completion message
+     */
+    function renderUI() {
+      const data = loadData();
+
+      // Get DOM elements
+      const yesterdaySection = document.getElementById('yesterday-section');
+      const inputSection = document.getElementById('input-section');
+      const completionSection = document.getElementById('completion-section');
+
+      // Check if already submitted today
+      if (hasSubmittedToday(data)) {
+        // STATE 3: Already submitted
+        yesterdaySection.classList.add('hidden');
+        inputSection.classList.add('hidden');
+        completionSection.classList.remove('hidden');
+
+        const lastEntry = getLastEntry(data);
+        document.getElementById('completion-text').textContent = lastEntry.response;
+      } else if (data.entries.length > 0) {
+        // STATE 2: Has previous entries, show yesterday
+        yesterdaySection.classList.remove('hidden');
+        inputSection.classList.remove('hidden');
+        completionSection.classList.add('hidden');
+
+        const lastEntry = getLastEntry(data);
+        document.getElementById('yesterday-text').textContent = lastEntry.response;
+      } else {
+        // STATE 1: First visit, no data
+        yesterdaySection.classList.add('hidden');
+        inputSection.classList.remove('hidden');
+        completionSection.classList.add('hidden');
+      }
+    }
+
+    /**
+     * Display current date in readable format
+     */
+    function displayCurrentDate() {
+      const now = new Date();
+      const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+      const formatted = now.toLocaleDateString('en-US', options);
+      document.getElementById('current-date').textContent = formatted;
+    }
+
+    // ============================================
+    // COMPONENT 3: EVENT HANDLERS
+    // Responds to user interactions
+    // ============================================
+
+    /**
+     * Handle form submission
+     */
+    function handleSubmit() {
+      const textarea = document.getElementById('response-input');
+      const responseText = textarea.value.trim();
+
+      // Validate input
+      if (!responseText) {
+        alert('Please write something before submitting.');
+        return;
+      }
+
+      // Save entry
+      saveEntry(responseText);
+
+      // Clear textarea
+      textarea.value = '';
+
+      // Update UI to show completion state
+      renderUI();
+    }
+
+    // ============================================
+    // INITIALIZATION
+    // Run when page loads
+    // ============================================
+
+    /*
+     * ONBOARDING ANIMATION LOGIC
+     * 
+     * Design Decision: Animation triggers in State 1 only (first-ever visit).
+     * 
+     * REASONING (from Day 242 discussion):
+     * The animation solves ACTIVATION, not retention. Its job is to nudge
+     * that critical first entry into existence. Once entry 1 exists, the
+     * temporal mirror (yesterday's self) becomes the retention mechanism.
+     * 
+     * By day 30, users won't remember this animation. But without it,
+     * some users might "switch off after writer's block and never come back
+     * because the app is unremarkable" (Joey, 1547hrs).
+     * 
+     * The animation is a first-impression amplifier that increases the
+     * chance someone writes entry 1. Without entry 1, there's no mirror.
+     * 
+     * ALTERNATIVE CONSIDERED (rejected):
+     * Triggering animation on every blank screen (behavior-based prompt).
+     * Rejected because: (a) Loop Echo is breath-paced, not nagging, and
+     * (b) onboarding solves discoverability, not writer's block.
+     * 
+     * ONE-TIME IMPLEMENTATION:
+     * Uses localStorage flag 'loop-echo-animation-seen' to track.
+     * Could tie to State 1 logic instead, but explicit flag allows
+     * future flexibility (e.g., "reset onboarding" feature).
+     */
+    
+    // Onboarding animation for "moving" word
+    function checkAndAnimateMoving() {
+      const hasSeenAnimation = localStorage.getItem('loop-echo-animation-seen');
+
+      // Only animate on first-ever visit (State 1)
+      if (!hasSeenAnimation) {
+        setTimeout(function () {
+          const movingWord = document.getElementById('moving-word');
+          if (movingWord) {
+            movingWord.classList.add('wave');
+
+            // Mark as seen after animation completes
+            setTimeout(function () {
+              localStorage.setItem('loop-echo-animation-seen', 'true');
+            }, 1000);
+          }
+        }, 5000); // 5-second delay
+      }
+    }
+
+    // Call during initialization (add this line after renderUI())
+    checkAndAnimateMoving();
+
+    document.addEventListener('DOMContentLoaded', function () {
+      // Display current date
+      displayCurrentDate();
+
+      // Render initial UI state
+      renderUI();
+
+      // Attach event listener to submit button
+      document.getElementById('submit-btn').addEventListener('click', handleSubmit);
+
+      // Allow Enter key to submit (optional: Cmd/Ctrl+Enter)
+      document.getElementById('response-input').addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+          handleSubmit();
+        }
+      });
+    });
+
+    // ============================================
+    // MODIFICATION POINTS
+    // Want to add features? Start here:
+    //
+    // 1. Clear all data button:
+    //    - Add button in HTML
+    //    - Add click handler that calls:
+    //      localStorage.setItem(STORAGE_KEY, JSON.stringify({ entries: [] }));
+    //      renderUI();
+    //
+    // 2. Change the question:
+    //    - Edit line 186 in HTML
+    //
+    // 3. Add pattern visualization (5+ days):
+    //    - In renderUI(), check if data.entries.length >= 5
+    //    - Extract words from all responses
+    //    - Count frequency
+    //    - Display in new section
+    //
+    // 4. Export data:
+    //    - Add button
+    //    - Convert entries to JSON/CSV
+    //    - Trigger download
+    // ============================================
+  </script>
+</body>
+
+</html>
