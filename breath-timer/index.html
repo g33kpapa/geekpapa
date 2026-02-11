@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>4-2-6 Breath</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #2c2416 0%, #1a1610 100%);
+            color: #d4c5a9;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3rem;
+            padding: 2rem;
+        }
+
+        .breath-container {
+            position: relative;
+            width: 400px;
+            height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .circle {
+            position: absolute;
+            border-radius: 50%;
+            transition: transform cubic-bezier(0.4, 0, 0.2, 1);
+            filter: blur(2px);
+        }
+
+        .circle-outer {
+            width: 320px;
+            height: 320px;
+            background: radial-gradient(circle at 30% 30%, #c4a24c, #a88a3c);
+            opacity: 0.5;
+            z-index: 1;
+        }
+
+        .circle-middle {
+            width: 240px;
+            height: 240px;
+            background: radial-gradient(circle at 30% 30%, #7a8450, #5f6a3d);
+            opacity: 0.6;
+            z-index: 2;
+        }
+
+        .circle-inner {
+            width: 160px;
+            height: 160px;
+            background: radial-gradient(circle at 30% 30%, #6b4423, #4a2f18);
+            opacity: 0.8;
+            z-index: 3;
+        }
+
+        .circle.expanded {
+            transform: scale(1.4);
+        }
+
+        .circle.contracted {
+            transform: scale(0.6);
+        }
+
+        .phase-label {
+            position: absolute;
+            font-size: 1.5rem;
+            font-weight: 300;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            z-index: 10;
+            opacity: 0.9;
+            transition: opacity 0.3s ease;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .button {
+            background: rgba(107, 68, 35, 0.4);
+            border: 1px solid rgba(212, 197, 169, 0.3);
+            color: #d4c5a9;
+            padding: 1rem 3rem;
+            font-size: 1rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            cursor: pointer;
+            border-radius: 2px;
+            transition: all 0.3s ease;
+            font-weight: 300;
+        }
+
+        .button:hover {
+            background: rgba(107, 68, 35, 0.6);
+            border-color: rgba(212, 197, 169, 0.5);
+        }
+
+        .button:active {
+            transform: scale(0.98);
+        }
+
+        .button.active {
+            background: rgba(122, 132, 80, 0.4);
+            border-color: rgba(122, 132, 80, 0.6);
+        }
+
+        .counter {
+            font-size: 1.2rem;
+            font-weight: 300;
+            letter-spacing: 0.05em;
+            opacity: 0.7;
+        }
+
+        .counter span {
+            font-size: 2rem;
+            opacity: 1;
+            margin-left: 0.5rem;
+        }
+
+        @media (max-width: 600px) {
+            .breath-container {
+                width: 300px;
+                height: 300px;
+            }
+
+            .circle-outer {
+                width: 240px;
+                height: 240px;
+            }
+
+            .circle-middle {
+                width: 180px;
+                height: 180px;
+            }
+
+            .circle-inner {
+                width: 120px;
+                height: 120px;
+            }
+
+            .phase-label {
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="breath-container">
+            <div class="circle circle-outer contracted"></div>
+            <div class="circle circle-middle contracted"></div>
+            <div class="circle circle-inner contracted"></div>
+            <div class="phase-label" id="phaseLabel">Ready</div>
+        </div>
+
+        <div class="controls">
+            <button class="button" id="startButton">Start</button>
+            <div class="counter">
+                Cycles: <span id="cycleCount">0</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const circles = document.querySelectorAll('.circle');
+        const phaseLabel = document.getElementById('phaseLabel');
+        const startButton = document.getElementById('startButton');
+        const cycleCount = document.getElementById('cycleCount');
+
+        let isRunning = false;
+        let cycles = 0;
+        let currentPhase = 'ready';
+        let animationTimer = null;
+
+        const INHALE_DURATION = 4000;
+        const HOLD_DURATION = 2000;
+        const EXHALE_DURATION = 6000;
+        const TOTAL_CYCLE = INHALE_DURATION + HOLD_DURATION + EXHALE_DURATION;
+
+        function setCircleState(state, duration = 0) {
+            circles.forEach(circle => {
+                circle.style.transition = duration > 0
+                    ? `transform ${duration}ms cubic-bezier(0.4, 0, 0.2, 1)`
+                    : 'none';
+
+                circle.classList.remove('expanded', 'contracted');
+                if (state !== 'neutral') {
+                    circle.classList.add(state);
+                }
+            });
+        }
+
+        function updatePhase(phase) {
+            currentPhase = phase;
+            switch(phase) {
+                case 'inhale':
+                    phaseLabel.textContent = 'Inhale';
+                    setCircleState('expanded', INHALE_DURATION);
+                    break;
+                case 'hold':
+                    phaseLabel.textContent = 'Hold';
+                    // Stay expanded, no transition
+                    break;
+                case 'exhale':
+                    phaseLabel.textContent = 'Exhale';
+                    setCircleState('contracted', EXHALE_DURATION);
+                    break;
+                case 'ready':
+                    phaseLabel.textContent = 'Ready';
+                    setCircleState('contracted', 0);
+                    break;
+            }
+        }
+
+        function runBreathCycle() {
+            // Inhale phase
+            updatePhase('inhale');
+
+            setTimeout(() => {
+                if (!isRunning) return;
+                // Hold phase
+                updatePhase('hold');
+
+                setTimeout(() => {
+                    if (!isRunning) return;
+                    // Exhale phase
+                    updatePhase('exhale');
+
+                    setTimeout(() => {
+                        if (!isRunning) return;
+                        // Cycle complete
+                        cycles++;
+                        cycleCount.textContent = cycles;
+                        runBreathCycle();
+                    }, EXHALE_DURATION);
+
+                }, HOLD_DURATION);
+
+            }, INHALE_DURATION);
+        }
+
+        function start() {
+            isRunning = true;
+            startButton.textContent = 'Stop';
+            startButton.classList.add('active');
+            runBreathCycle();
+        }
+
+        function stop() {
+            isRunning = false;
+            startButton.textContent = 'Start';
+            startButton.classList.remove('active');
+            updatePhase('ready');
+        }
+
+        function reset() {
+            stop();
+            cycles = 0;
+            cycleCount.textContent = cycles;
+        }
+
+        startButton.addEventListener('click', () => {
+            if (isRunning) {
+                stop();
+            } else {
+                start();
+            }
+        });
+
+        // Keyboard support
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                startButton.click();
+            } else if (e.code === 'Escape') {
+                reset();
+            }
+        });
+
+        // Initialize
+        updatePhase('ready');
+    </script>
+</body>
+</html>
